@@ -1,4 +1,3 @@
-
 name: Prueba de tokens
 
 on:
@@ -9,30 +8,13 @@ jobs:
     runs-on: self-hosted
 
     steps:
-      - name: Comprobar variables
+      - name: Comparar DEV_TOKEN
         shell: powershell
         env:
           DEV_TOKEN: ${{ secrets.DEV_TOKEN }}
         run: |
           Write-Host "DEV_TOKEN recibido por GitHub: $($env:DEV_TOKEN.Length) caracteres"
-          
-          if ([string]::IsNullOrEmpty($env:LOCAL_DEV_TOKEN)) {
-            Write-Host "LOCAL_DEV_TOKEN: NO DISPONIBLE"
-            exit 1
-          }
-
           Write-Host "LOCAL_DEV_TOKEN recibido por el runner: $($env:LOCAL_DEV_TOKEN.Length) caracteres"
-
-          $sha = [System.Security.Cryptography.SHA256]::Create()
-
-          $devBytes = [System.Text.Encoding]::UTF8.GetBytes($env:DEV_TOKEN)
-          $localBytes = [System.Text.Encoding]::UTF8.GetBytes($env:LOCAL_DEV_TOKEN)
-
-          $devHash = [Convert]::ToHexString($sha.ComputeHash($devBytes))
-          $localHash = [Convert]::ToHexString($sha.ComputeHash($localBytes))
-
-          Write-Host "Hash DEV_TOKEN: $devHash"
-          Write-Host "Hash LOCAL_DEV_TOKEN: $localHash"
 
           if ($env:DEV_TOKEN -eq $env:LOCAL_DEV_TOKEN) {
             Write-Host "Los tokens coinciden"
