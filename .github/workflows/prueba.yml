@@ -23,6 +23,17 @@ jobs:
 
           Write-Host "LOCAL_DEV_TOKEN recibido por el runner: $($env:LOCAL_DEV_TOKEN.Length) caracteres"
 
+          $sha = [System.Security.Cryptography.SHA256]::Create()
+
+          $devBytes = [System.Text.Encoding]::UTF8.GetBytes($env:DEV_TOKEN)
+          $localBytes = [System.Text.Encoding]::UTF8.GetBytes($env:LOCAL_DEV_TOKEN)
+
+          $devHash = [Convert]::ToHexString($sha.ComputeHash($devBytes))
+          $localHash = [Convert]::ToHexString($sha.ComputeHash($localBytes))
+
+          Write-Host "Hash DEV_TOKEN: $devHash"
+          Write-Host "Hash LOCAL_DEV_TOKEN: $localHash"
+
           if ($env:DEV_TOKEN -eq $env:LOCAL_DEV_TOKEN) {
             Write-Host "Los tokens coinciden"
           } else {
