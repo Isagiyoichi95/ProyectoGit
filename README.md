@@ -1,5 +1,4 @@
 # ProyectoGit
 
-AppVersion-2 (2026-10-08 16:36:02)
+AppVersion-0
 
-Añadida feature: develop
