@@ -2,59 +2,58 @@ name: CD
 
 on:
   pull_request:
+    branches:
+      - main
     types: [opened, synchronize, reopened]
-    branches: [main]
 
   push:
-    branches: [main]
+    branches:
+      - main
 
-  workflow_dispatch: {}
-
-permissions:
-  contents: write
+  workflow_dispatch:
 
 jobs:
-
   bump-version:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v5
-      - name: Incrementar versión en el README
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Incrementar versión
         run: |
-          LAST=$(grep -oP 'AppVersion-\K[0-9]+' README.md | tail -1)
-          NEXT=$((LAST + 1))
-          FECHA=$(date '+%d/%m/%Y %H:%M')
-          echo "- AppVersion-$NEXT - $FECHA" >> README.md
-      - name: Commit y push del README
-        run: |
+          VERSION=$(grep -o 'AppVersion-[0-9]*' README.md | head -1 | cut -d'-' -f2)
+
+          if [ -z "$VERSION" ]; then
+            VERSION=0
+          fi
+
+          NEW_VERSION=$((VERSION + 1))
+
+          sed -i "s/AppVersion-$VERSION/AppVersion-$NEW_VERSION/" README.md
+
+          echo "Versión actualizada a AppVersion-$NEW_VERSION"
+          date
+
           git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add README.md
-          git commit -m "docs: bump de versión" || echo "Sin cambios que commitear"
-          git push || echo "Nada que subir"
+          git commit -m "Incrementar versión a AppVersion-$NEW_VERSION" || echo "Sin cambios"
+          git push
 
   validate-prod:
     needs: bump-version
     runs-on: self-hosted
 
     steps:
-      - uses: actions/checkout@v5
-      - name: Validar entorno de producción
-        env:
-          TOKEN: ${{ secrets.PROD_TOKEN }}
-          LOCAL_PROD_TOKEN: ${{ secrets.LOCAL_PROD_TOKEN }}
+      - name: Validar PROD_TOKEN
+        shell: powershell
         run: |
-          $localToken = [Environment]::GetEnvironmentVariable("LOCAL_PROD_TOKEN", "User")
-          if ($env:TOKEN -eq $localToken) {
-              Write-Host "CD: validacion de produccion correcta - listo para desplegar"
+          if ($env:LOCAL_PROD_TOKEN -eq "${{ secrets.PROD_TOKEN }}") {
+            Write-Host "PROD_TOKEN correcto"
           } else {
-              Write-Host "CD: validacion fallida"
-              exit 1
-          }
-
-          if ($env:TOKEN -eq $env:LOCAL_PROD_TOKEN) {
-            Write-Host "CD: validación de producción correcta ✅ — listo para desplegar"
-          } else {
-            Write-Host "CD: validación fallida ❌"
+            Write-Error "PROD_TOKEN incorrecto"
             exit 1
           }
+        env:
+          LOCAL_PROD_TOKEN: ${{ vars.LOCAL_PROD_TOKEN }}
