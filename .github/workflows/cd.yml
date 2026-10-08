@@ -1,0 +1,59 @@
+name: CD
+
+on:
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened]
+
+  push:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+jobs:
+  bump-version:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Incrementar versión
+        run: |
+          VERSION=$(grep -o 'AppVersion-[0-9]*' README.md | head -1 | cut -d'-' -f2)
+
+          if [ -z "$VERSION" ]; then
+            VERSION=0
+          fi
+
+          NEW_VERSION=$((VERSION + 1))
+
+          sed -i "s/AppVersion-$VERSION/AppVersion-$NEW_VERSION/" README.md
+
+          echo "Versión actualizada a AppVersion-$NEW_VERSION"
+          date
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git commit -m "Incrementar versión a AppVersion-$NEW_VERSION" || echo "Sin cambios"
+          git push
+
+  validate-prod:
+    needs: bump-version
+    runs-on: self-hosted
+
+    steps:
+      - name: Validar PROD_TOKEN
+        shell: powershell
+        run: |
+          if ($env:LOCAL_PROD_TOKEN -eq "${{ secrets.PROD_TOKEN }}") {
+            Write-Host "PROD_TOKEN correcto"
+          } else {
+            Write-Error "PROD_TOKEN incorrecto"
+            exit 1
+          }
+        env:
+          LOCAL_PROD_TOKEN: ${{ vars.LOCAL_PROD_TOKEN }}
