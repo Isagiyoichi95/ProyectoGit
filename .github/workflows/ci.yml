@@ -2,54 +2,44 @@ name: CI
 
 on:
   pull_request:
+    branches:
+      - develop
     types: [opened, synchronize, reopened]
-    branches: [develop]
-  push:
-    branches: [develop]
-  workflow_dispatch: {}
 
-permissions:
-  contents: write
+  push:
+    branches:
+      - develop
+
+  workflow_dispatch:
 
 jobs:
   update-readme:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v5
-      - name: Registrar la rama en el README
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Actualizar README
         run: |
-          BRANCH=$(git log -1 --pretty=%B | grep 'Merge pull request' | sed -E 's#.*from [^/]+/##')
-          BRANCH=${BRANCH:-${{ github.head_ref || github.ref_name }}}
-          echo "- Anadida feature: $BRANCH" >> README.md
-      - name: Commit y push del README
-        run: |
+          echo "Añadida feature: ${{ github.head_ref || github.ref_name }}" >> README.md
           git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add README.md
-          git commit -m "docs: registrar rama" || echo "Sin cambios que commitear"
-          git push || echo "Nada que subir"
+          git commit -m "Actualizar README desde CI" || echo "Sin cambios"
+          git push
 
   validate-dev:
     needs: update-readme
     runs-on: self-hosted
-    steps:
-      - uses: actions/checkout@v5
-      - name: Validar entorno de desarrollo
-        env:
-          TOKEN: ${{ secrets.DEV_TOKEN }}
-          LOCAL_DEV_TOKEN: ${{ secrets.LOCAL_DEV_TOKEN }}
-        run: |
-          $localToken = [Environment]::GetEnvironmentVariable("LOCAL_DEV_TOKEN", "User")
-          if ($env:TOKEN -eq $localToken) {
-              Write-Host "CI: validacion de desarrollo correcta"
-          } else {
-              Write-Host "CI: validacion fallida"
-              exit 1
-          }
 
-          if ($env:TOKEN -eq $env:LOCAL_DEV_TOKEN) {
-              Write-Host "CI: validacion de desarrollo correcta ✅"
+    steps:
+      - name: Validar DEV_TOKEN
+        shell: powershell
+        run: |
+          if ($env:LOCAL_DEV_TOKEN -eq "${{ secrets.DEV_TOKEN }}") {
+            Write-Host "DEV_TOKEN correcto"
           } else {
-              Write-Host "CI: validacion fallida ❌"
-              exit 1
+            Write-Error "DEV_TOKEN incorrecto"
+            exit 1
           }
