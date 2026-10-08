@@ -18,7 +18,7 @@ jobs:
   bump-version:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Incrementar versión en el README
         run: |
           LAST=$(grep -oP 'AppVersion-\K[0-9]+' README.md | tail -1)
@@ -38,7 +38,7 @@ jobs:
     runs-on: self-hosted
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Validar entorno de producción
         shell: pwsh
         env:
