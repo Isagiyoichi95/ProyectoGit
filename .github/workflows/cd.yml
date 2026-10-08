@@ -1,60 +1,47 @@
 name: CD
-permissions:
-  contents: write
+
 on:
   pull_request:
-    branches:
-      - main
+    branches: [main]
     types: [opened, synchronize, reopened]
-
   push:
-    branches:
-      - main
-
+    branches: [main]
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   bump-version:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
 
-      - name: Incrementar versión
+      - name: Incrementar versión en el README
         run: |
-          VERSION=$(grep -o 'AppVersion-[0-9]*' README.md | head -1 | cut -d'-' -f2)
-
-          if [ -z "$VERSION" ]; then
-            VERSION=0
-          fi
-
-          NEW_VERSION=$((VERSION + 1))
-
-          sed -i "s/AppVersion-$VERSION/AppVersion-$NEW_VERSION/" README.md
-
-          echo "Versión actualizada a AppVersion-$NEW_VERSION"
-          date
-
+          current=$(grep -oP 'AppVersion-\K[0-9]+' README.md | head -1)
+          new=$((current+1))
+          sed -i "s/AppVersion-$current.*/AppVersion-$new ($(date -u '+%Y-%m-%d %H:%M:%S'))/" README.md
           git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           git add README.md
-          git commit -m "Incrementar versión a AppVersion-$NEW_VERSION" || echo "Sin cambios"
+          git commit -m "cd: bump versión"
           git push
 
   validate-prod:
     needs: bump-version
     runs-on: self-hosted
-
     steps:
-      - name: Validar PROD_TOKEN
+      - name: Validar PROD_TOKEN contra variable local
         shell: powershell
+        env:
+          PROD_TOKEN: ${{ secrets.PROD_TOKEN }}
         run: |
-          if ($env:LOCAL_PROD_TOKEN -eq "${{ secrets.PROD_TOKEN }}") {
-            Write-Host "PROD_TOKEN correcto"
+          if ($env:PROD_TOKEN -eq $env:LOCAL_PROD_TOKEN) {
+            Write-Host "Token válido"
           } else {
-            Write-Error "PROD_TOKEN incorrecto"
+            Write-Host "El token no coincide"
             exit 1
           }
-        env:
-          LOCAL_PROD_TOKEN: ${{ vars.LOCAL_PROD_TOKEN }}
