@@ -40,7 +40,6 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Validar entorno de producción
-        shell: pwsh
         env:
           TOKEN: ${{ secrets.PROD_TOKEN }}
           LOCAL_PROD_TOKEN: ${{ secrets.LOCAL_PROD_TOKEN }}
