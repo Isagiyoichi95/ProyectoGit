@@ -35,7 +35,6 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Validar entorno de desarrollo
-        shell: pwsh
         env:
           TOKEN: ${{ secrets.DEV_TOKEN }}
           LOCAL_DEV_TOKEN: ${{ secrets.LOCAL_DEV_TOKEN }}
