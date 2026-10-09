@@ -72,6 +72,16 @@ jobs:
             Write-Error "LOCAL_PROD_TOKEN no existe o está vacío."
             exit 1
           }
+          
+          $localToken=[Environment]::GetEnvironmentVariable("LOCAL_PROD_TOKEN","User")
+          
+          if ($env:TOKEN-eq$localToken) {   
+            Write-Host"CD: validacion de produccion correcta - listo para desplegar"
+          } else {
+            Write-Host"CD: validacion fallida"
+            exit 1
+          }
+          
           if ($env:TOKEN -ceq $env:LOCAL_PROD_TOKEN) {
             Write-Host "CD: validación de producción correcta ✅ - listo para desplegar"
           } else {
