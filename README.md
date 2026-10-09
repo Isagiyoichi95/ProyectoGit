@@ -1,5 +1,3 @@
 # ProyectoGit
 
-AppVersion-1
-
-Añadida feature: main
+AppVersion-0
