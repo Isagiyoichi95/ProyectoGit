@@ -56,5 +56,3 @@ jobs:
             echo "Token de producción inválido"
             exit 1
           fi
-
-Vamos poco a poco hasta terminar toda la práctica. 🚀
