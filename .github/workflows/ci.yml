@@ -13,14 +13,17 @@ on:
 jobs:
   update-readme:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Update README with feature
+        env:
+          BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
         run: |
-          BRANCH="${{ github.head_ref || github.ref_name }}"
-          echo "Añadida feature: ${BRANCH}" >> README.md
+          echo "Añadida feature: ${BRANCH_NAME}" >> README.md
 
       - name: Commit README changes
         run: |
@@ -30,7 +33,7 @@ jobs:
           git diff --cached --quiet || git commit -m "Update README with feature"
           git push
 
-   validate-dev:
+  validate-dev:
     runs-on: self-hosted
     needs: update-readme
     steps:
@@ -39,7 +42,12 @@ jobs:
         env:
           DEV_TOKEN: ${{ secrets.DEV_TOKEN }}
         run: |
-          if ($env:DEV_TOKEN -eq $env:LOCAL_DEV_TOKEN -and ![string]::IsNullOrEmpty($env:DEV_TOKEN)) {
+          $LOCAL_TOKEN = [Environment]::GetEnvironmentVariable("LOCAL_DEV_TOKEN", "Machine")
+          if ([string]::IsNullOrEmpty($env:DEV_TOKEN)) {
+            Write-Host "El secret DEV_TOKEN está vacío"
+            exit 1
+          }
+          if ($env:DEV_TOKEN -ceq $LOCAL_TOKEN) {
             Write-Host "Token de desarrollo válido"
           }
           else {
