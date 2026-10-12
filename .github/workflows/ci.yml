@@ -30,17 +30,19 @@ jobs:
           git diff --cached --quiet || git commit -m "Update README with feature"
           git push
 
-  validate-dev:
+   validate-dev:
     runs-on: self-hosted
     needs: update-readme
     steps:
       - name: Validate development token
+        shell: powershell
         env:
           DEV_TOKEN: ${{ secrets.DEV_TOKEN }}
         run: |
-          if [ "$DEV_TOKEN" = "$LOCAL_DEV_TOKEN" ] && [ -n "$DEV_TOKEN" ]; then
-            echo "Token de desarrollo válido"
-          else
-            echo "Token de desarrollo inválido"
+          if ($env:DEV_TOKEN -eq $env:LOCAL_DEV_TOKEN -and ![string]::IsNullOrEmpty($env:DEV_TOKEN)) {
+            Write-Host "Token de desarrollo válido"
+          }
+          else {
+            Write-Host "Token de desarrollo inválido"
             exit 1
-          fi
+          }
