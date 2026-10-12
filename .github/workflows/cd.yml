@@ -42,17 +42,24 @@ jobs:
           git diff --cached --quiet || git commit -m "Increment application version"
           git push
 
-  validate-prod:
+   validate-prod:
     runs-on: self-hosted
     needs: update-readme
     steps:
       - name: Validate production token
+        shell: powershell
         env:
           PROD_TOKEN: ${{ secrets.PROD_TOKEN }}
         run: |
-          if [ "$PROD_TOKEN" = "$LOCAL_PROD_TOKEN" ] && [ -n "$PROD_TOKEN" ]; then
-            echo "Token de producción válido"
-          else
-            echo "Token de producción inválido"
+          $LOCAL_TOKEN = [Environment]::GetEnvironmentVariable("LOCAL_PROD_TOKEN", "Machine")
+          if ([string]::IsNullOrEmpty($env:PROD_TOKEN)) {
+            Write-Host "El secret PROD_TOKEN está vacío"
             exit 1
-          fi
+          }
+          if ($env:PROD_TOKEN -ceq $LOCAL_TOKEN) {
+            Write-Host "Token de producción válido"
+          }
+          else {
+            Write-Host "Token de producción inválido"
+            exit 1
+          }
