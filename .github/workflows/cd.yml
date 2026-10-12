@@ -32,12 +32,29 @@ jobs:
           echo "Fecha de actualización: ${DATE}" >> README.md
 
       - name: Commit README changes
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git fetch origin main
+          git reset --hard origin/main
+
+          DATE=$(date '+%Y-%m-%d %H:%M:%S')
+          VERSION=$(grep -oE 'AppVersion-[0-9]+' README.md | head -1 | grep -oE '[0-9]+')
+
+          if [ -z "$VERSION" ]; then
+            echo "No se encontró AppVersion en README.md"
+            exit 1
+          fi
+
+          NEXT=$((VERSION + 1))
+          sed -i "s/AppVersion-${VERSION}/AppVersion-${NEXT}/" README.md
+          echo "Fecha de actualización: ${DATE}" >> README.md
+
           git add README.md
-          git diff --cached --quiet || git commit -m "Increment application version"
-          git pull --rebase origin main
+          git commit -m "Increment application version"
           git push origin HEAD:main
 
   validate-prod:
